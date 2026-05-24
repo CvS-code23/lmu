@@ -15,6 +15,7 @@ export interface Question {
   correctAnswers: boolean[]
   explanation?: string
   source: string
+  difficulty?: 'easy' | 'medium' | 'hard'
 }
 
 export interface SubjectMeta {

@@ -1,6 +1,7 @@
 import { type Question } from '../types'
+import { updateQuestions } from './update_questions'
 
-export const questions: Question[] = [
+const baseQuestions: Question[] = [
   // ─── RISK MANAGEMENT (Berk/DeMarzo Ch. 20, 21, 30) ───────────────────────
   {
     id: 'risk-01',
@@ -1543,3 +1544,5 @@ export const questions: Question[] = [
     source: 'Hill, C.W. (2023), International Business 14e, McGraw-Hill',
   },
 ]
+
+export const questions: Question[] = [...baseQuestions, ...updateQuestions]

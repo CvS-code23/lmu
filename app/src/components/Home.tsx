@@ -3,9 +3,10 @@ import { SUBJECT_META } from '../utils/scoring'
 interface HomeProps {
   onStartPractice: () => void
   onStartTest: () => void
+  onLiterature: () => void
 }
 
-export function Home({ onStartPractice, onStartTest }: HomeProps) {
+export function Home({ onStartPractice, onStartTest, onLiterature }: HomeProps) {
   const subjects = Object.values(SUBJECT_META)
 
   return (
@@ -75,6 +76,16 @@ export function Home({ onStartPractice, onStartTest }: HomeProps) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Literature button */}
+          <div className="mb-6 text-center">
+            <button
+              onClick={onLiterature}
+              className="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white border border-white border-opacity-30 px-6 py-3 rounded-xl font-semibold text-sm transition backdrop-blur-sm"
+            >
+              📚 Literaturübersicht
+            </button>
           </div>
 
           {/* Subjects */}

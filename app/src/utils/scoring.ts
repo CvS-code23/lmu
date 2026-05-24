@@ -1,8 +1,12 @@
 import { type Question, type QuestionResult, type SubjectMeta, type Subject } from '../types'
 
 export function scoreQuestion(question: Question, userAnswers: boolean[]): QuestionResult {
-  const wrong = question.correctAnswers.filter((correct, i) => correct !== userAnswers[i]).length
-  const score = Math.max(0, 5 - wrong) as 0 | 1 | 2 | 3 | 4 | 5
+  // 5-3-1-0 schema: count positions where correctAnswers[i] !== userAnswers[i]
+  const errors = question.correctAnswers.reduce(
+    (acc, correct, i) => acc + (correct !== userAnswers[i] ? 1 : 0),
+    0,
+  )
+  const score = (errors === 0 ? 5 : errors === 1 ? 3 : errors === 2 ? 1 : 0) as 0 | 1 | 3 | 5
   return { question, userAnswers, score, maxScore: 5 }
 }
 

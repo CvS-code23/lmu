@@ -3,9 +3,10 @@ import { Home } from './components/Home'
 import { PracticeMode } from './components/PracticeMode'
 import { TestMode } from './components/TestMode'
 import { ResultsPage } from './components/ResultsPage'
+import { LiteraturePage } from './components/LiteraturePage'
 import { type SessionResult } from './types'
 
-type View = 'home' | 'practice' | 'test' | 'results'
+type View = 'home' | 'practice' | 'test' | 'results' | 'literature'
 
 export default function App() {
   const [view, setView] = useState<View>('home')
@@ -23,6 +24,15 @@ export default function App() {
       <Home
         onStartPractice={() => setView('practice')}
         onStartTest={() => setView('test')}
+        onLiterature={() => setView('literature')}
+      />
+    )
+  }
+
+  if (view === 'literature') {
+    return (
+      <LiteraturePage
+        onBack={() => setView('home')}
       />
     )
   }
