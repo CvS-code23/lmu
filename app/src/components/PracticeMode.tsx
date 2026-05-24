@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { questions } from '../data/questions'
 import { type Question, type Subject, type SessionResult } from '../types'
 import { SUBJECT_META, scoreQuestion, pickRandom } from '../utils/scoring'
@@ -7,7 +7,7 @@ import { QuestionCard } from './QuestionCard'
 type Difficulty = 'easy' | 'medium' | 'hard'
 
 interface PracticeModeProps {
-  onFinish: (result: SessionResult) => void
+  onFinish: (result: Omit<SessionResult, 'id' | 'timestamp'>) => void
   onBack: () => void
 }
 
@@ -31,6 +31,7 @@ export function PracticeMode({ onFinish, onBack }: PracticeModeProps) {
   const [showResult, setShowResult] = useState(false)
   const [results, setResults] = useState<SessionResult['results']>([])
   const [startTime] = useState(Date.now())
+  const questionStartRef = useRef(Date.now())
 
   const subjectPool = useMemo(() => {
     return selectedSubjects.size === 0
@@ -62,6 +63,7 @@ export function PracticeMode({ onFinish, onBack }: PracticeModeProps) {
 
   function handleStart() {
     if (subjectPool.length === 0) return
+    questionStartRef.current = Date.now()
     const q = pickQuestion('medium', new Set(), subjectPool)
     setCurrentQuestion(q)
     setStarted(true)
@@ -77,8 +79,9 @@ export function PracticeMode({ onFinish, onBack }: PracticeModeProps) {
 
   function handleSubmit() {
     if (!currentQuestion) return
+    const timeSeconds = Math.round((Date.now() - questionStartRef.current) / 1000)
     setShowResult(true)
-    const result = scoreQuestion(currentQuestion, userAnswers)
+    const result = scoreQuestion(currentQuestion, userAnswers, timeSeconds)
     setResults((prev) => [...prev, result])
     // Adapt difficulty
     if (result.score >= 3) {
@@ -116,6 +119,7 @@ export function PracticeMode({ onFinish, onBack }: PracticeModeProps) {
       })
       return
     }
+    questionStartRef.current = Date.now()
     setCurrentQuestion(nextQ)
     setUserAnswers([false, false, false, false, false])
     setShowResult(false)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { type Question, type SessionResult } from '../types'
 import { scoreQuestion } from '../utils/scoring'
 import { QuestionCard } from './QuestionCard'
@@ -6,7 +6,7 @@ import { SubjectBadge } from './SubjectBadge'
 
 interface CustomSessionProps {
   questions: Question[]
-  onFinish: (result: SessionResult) => void
+  onFinish: (result: Omit<SessionResult, 'id' | 'timestamp'>) => void
   onBack: () => void
 }
 
@@ -23,6 +23,7 @@ export function CustomSession({ questions, onFinish, onBack }: CustomSessionProp
   const [showResult, setShowResult] = useState(false)
   const [results, setResults] = useState<SessionResult['results']>([])
   const [startTime] = useState(Date.now())
+  const questionStartRef = useRef(Date.now())
 
   const currentQuestion = questions[currentIndex]
   const totalScore = results.reduce((s, r) => s + r.score, 0)
@@ -38,16 +39,18 @@ export function CustomSession({ questions, onFinish, onBack }: CustomSessionProp
   }
 
   function handleSubmit() {
+    const timeSeconds = Math.round((Date.now() - questionStartRef.current) / 1000)
     setShowResult(true)
-    const result = scoreQuestion(currentQuestion, userAnswers)
+    const result = scoreQuestion(currentQuestion, userAnswers, timeSeconds)
     setResults((prev) => [...prev, result])
   }
 
   function handleNext() {
+    questionStartRef.current = Date.now()
     if (currentIndex + 1 >= questions.length) {
       const allResults = [...results]
       onFinish({
-        mode: 'practice',
+        mode: 'custom',
         results: allResults,
         totalScore: allResults.reduce((s, r) => s + r.score, 0),
         maxTotalScore: allResults.length * 5,
@@ -64,7 +67,7 @@ export function CustomSession({ questions, onFinish, onBack }: CustomSessionProp
     if (results.length === 0) { onBack(); return }
     const allResults = [...results]
     onFinish({
-      mode: 'practice',
+      mode: 'custom',
       results: allResults,
       totalScore: allResults.reduce((s, r) => s + r.score, 0),
       maxTotalScore: allResults.length * 5,

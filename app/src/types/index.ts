@@ -33,10 +33,13 @@ export interface QuestionResult {
   userAnswers: boolean[]
   score: number
   maxScore: 5
+  timeSeconds: number   // time spent on this question (0 if not tracked)
 }
 
 export interface SessionResult {
-  mode: 'practice' | 'test'
+  id: string
+  timestamp: number     // Unix ms when session was saved
+  mode: 'practice' | 'test' | 'custom'
   subject?: Subject
   results: QuestionResult[]
   totalScore: number

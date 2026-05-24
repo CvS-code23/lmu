@@ -5,9 +5,10 @@ interface HomeProps {
   onStartTest: () => void
   onSessionCreator: () => void
   onLiterature: () => void
+  onDashboard: () => void
 }
 
-export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterature }: HomeProps) {
+export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterature, onDashboard }: HomeProps) {
   const subjects = Object.values(SUBJECT_META)
 
   return (
@@ -92,8 +93,14 @@ export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterat
             </div>
           </div>
 
-          {/* Literature button */}
-          <div className="mb-6 text-center">
+          {/* Secondary action buttons */}
+          <div className="mb-6 flex gap-3 justify-center flex-wrap">
+            <button
+              onClick={onDashboard}
+              className="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white border border-white border-opacity-30 px-6 py-3 rounded-xl font-semibold text-sm transition backdrop-blur-sm"
+            >
+              📊 Dashboard
+            </button>
             <button
               onClick={onLiterature}
               className="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white border border-white border-opacity-30 px-6 py-3 rounded-xl font-semibold text-sm transition backdrop-blur-sm"

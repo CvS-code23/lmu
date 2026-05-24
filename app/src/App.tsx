@@ -6,9 +6,11 @@ import { ResultsPage } from './components/ResultsPage'
 import { LiteraturePage } from './components/LiteraturePage'
 import { SessionCreator } from './components/SessionCreator'
 import { CustomSession } from './components/CustomSession'
+import { Dashboard } from './components/Dashboard'
 import { type Question, type SessionResult } from './types'
+import { saveSession, generateId } from './utils/history'
 
-type View = 'home' | 'practice' | 'test' | 'results' | 'literature' | 'session-creator' | 'custom-session'
+type View = 'home' | 'practice' | 'test' | 'results' | 'literature' | 'session-creator' | 'custom-session' | 'dashboard'
 
 export default function App() {
   const [view, setView] = useState<View>('home')
@@ -16,8 +18,14 @@ export default function App() {
   const [lastView, setLastView] = useState<View>('practice')
   const [customQuestions, setCustomQuestions] = useState<Question[]>([])
 
-  function handleFinish(result: SessionResult, returnTo: View) {
-    setLastResult(result)
+  function handleFinish(result: Omit<SessionResult, 'id' | 'timestamp'>, returnTo: View) {
+    const fullResult: SessionResult = {
+      ...result,
+      id: generateId(),
+      timestamp: Date.now(),
+    }
+    saveSession(fullResult)
+    setLastResult(fullResult)
     setLastView(returnTo)
     setView('results')
   }
@@ -29,12 +37,17 @@ export default function App() {
         onStartTest={() => setView('test')}
         onSessionCreator={() => setView('session-creator')}
         onLiterature={() => setView('literature')}
+        onDashboard={() => setView('dashboard')}
       />
     )
   }
 
   if (view === 'literature') {
     return <LiteraturePage onBack={() => setView('home')} />
+  }
+
+  if (view === 'dashboard') {
+    return <Dashboard onBack={() => setView('home')} />
   }
 
   if (view === 'session-creator') {

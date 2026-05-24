@@ -10,7 +10,7 @@ const QUESTIONS_PER_SUBJECT = 5
 const SECONDS_PER_SUBJECT = 25 * 60
 
 interface TestModeProps {
-  onFinish: (result: SessionResult) => void
+  onFinish: (result: Omit<SessionResult, 'id' | 'timestamp'>) => void
   onBack: () => void
 }
 
