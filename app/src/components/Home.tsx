@@ -1,4 +1,5 @@
 import { SUBJECT_META } from '../utils/scoring'
+import { type Subject } from '../types'
 
 interface HomeProps {
   onStartPractice: () => void
@@ -6,9 +7,10 @@ interface HomeProps {
   onSessionCreator: () => void
   onLiterature: () => void
   onDashboard: () => void
+  onLernheft: (subject?: Subject) => void
 }
 
-export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterature, onDashboard }: HomeProps) {
+export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterature, onDashboard, onLernheft }: HomeProps) {
   const subjects = Object.values(SUBJECT_META)
 
   return (
@@ -102,25 +104,37 @@ export function Home({ onStartPractice, onStartTest, onSessionCreator, onLiterat
               📊 Dashboard
             </button>
             <button
+              onClick={() => onLernheft()}
+              className="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white border border-white border-opacity-30 px-6 py-3 rounded-xl font-semibold text-sm transition backdrop-blur-sm"
+            >
+              📖 Lernheft
+            </button>
+            <button
               onClick={onLiterature}
               className="inline-flex items-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white border border-white border-opacity-30 px-6 py-3 rounded-xl font-semibold text-sm transition backdrop-blur-sm"
             >
-              📚 Literaturübersicht
+              📚 Literatur
             </button>
           </div>
 
-          {/* Subjects */}
+          {/* Subjects — click to open Lernheft for that subject */}
           <div className="bg-white bg-opacity-10 rounded-2xl p-6 backdrop-blur-sm">
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wide">6 Themengebiete</h3>
+            <h3 className="text-white font-semibold mb-1 text-sm uppercase tracking-wide">6 Themengebiete</h3>
+            <p className="text-blue-200 text-xs mb-4">Tippe auf ein Thema für den Lernheft-Artikel.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {subjects.map((s) => (
-                <div key={s.id} className={`rounded-xl p-3 flex items-start gap-3 ${s.bgColor}`}>
+                <button
+                  key={s.id}
+                  onClick={() => onLernheft(s.id)}
+                  className={`rounded-xl p-3 flex items-center gap-3 ${s.bgColor} hover:brightness-95 transition-all text-left group`}
+                >
                   <span className="text-lg">{s.language === 'en' ? '🇬🇧' : '🇩🇪'}</span>
-                  <div>
+                  <div className="flex-1">
                     <div className={`font-semibold text-sm ${s.color}`}>{s.label}</div>
                     <div className="text-gray-500 text-xs">{s.language === 'en' ? 'English' : 'Deutsch'}</div>
                   </div>
-                </div>
+                  <span className={`text-base ${s.color} opacity-30 group-hover:opacity-70 transition-opacity`}>›</span>
+                </button>
               ))}
             </div>
           </div>
