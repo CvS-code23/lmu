@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { questions as allQuestions } from '../data/questions'
 import { type Question, type Subject } from '../types'
 import { SUBJECT_META, pickRandom } from '../utils/scoring'
+import { getSeenIds, clearSeen } from '../utils/seenQuestions'
 
 interface SubjectConfig {
   easy: number
@@ -19,6 +20,7 @@ interface SessionCreatorProps {
 const SUBJECTS = Object.values(SUBJECT_META)
 
 type Diff = 'easy' | 'medium' | 'hard'
+type Mode = 'new' | 'review'
 
 const DIFF_LABEL: Record<Diff, string> = { easy: 'Leicht', medium: 'Mittel', hard: 'Schwer' }
 
@@ -41,19 +43,39 @@ function defaultConfig(): SessionConfig {
 
 export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
   const [configs, setConfigs] = useState<SessionConfig>(defaultConfig)
+  const [mode, setMode] = useState<Mode>('new')
+
+  // Seen IDs — re-read when mode changes so it's always fresh
+  const seenIds = useMemo(() => getSeenIds(), [mode])
 
   const availability = useMemo(() => {
     const out = {} as Record<Subject, Record<Diff, number>>
     for (const s of SUBJECTS) {
       const sq = allQuestions.filter((q) => q.subject === s.id)
+      const pool = mode === 'new'
+        ? sq.filter((q) => !seenIds.has(q.id))
+        : sq.filter((q) => seenIds.has(q.id))
       out[s.id] = {
-        easy: sq.filter((q) => q.difficulty === 'easy').length,
-        medium: sq.filter((q) => q.difficulty === 'medium').length,
-        hard: sq.filter((q) => q.difficulty === 'hard').length,
+        easy: pool.filter((q) => q.difficulty === 'easy').length,
+        medium: pool.filter((q) => q.difficulty === 'medium').length,
+        hard: pool.filter((q) => q.difficulty === 'hard').length,
       }
     }
     return out
-  }, [])
+  }, [mode, seenIds])
+
+  // Total new/seen counts for the mode badge
+  const totalNew = useMemo(() =>
+    allQuestions.filter((q) => !seenIds.has(q.id)).length,
+  [seenIds])
+  const totalSeen = useMemo(() =>
+    allQuestions.filter((q) => seenIds.has(q.id)).length,
+  [seenIds])
+
+  function switchMode(next: Mode) {
+    setMode(next)
+    setConfigs(defaultConfig())
+  }
 
   function adjust(subject: Subject, diff: Diff, delta: number) {
     setConfigs((prev) => {
@@ -98,18 +120,22 @@ export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
     const selected: Question[] = []
     for (const s of SUBJECTS) {
       const { easy, medium, hard } = configs[s.id]
-      const pool = allQuestions.filter((q) => q.subject === s.id)
+      const pool = allQuestions.filter((q) => {
+        if (q.subject !== s.id) return false
+        return mode === 'new' ? !seenIds.has(q.id) : seenIds.has(q.id)
+      })
       if (easy > 0) selected.push(...pickRandom(pool.filter((q) => q.difficulty === 'easy'), easy))
       if (medium > 0) selected.push(...pickRandom(pool.filter((q) => q.difficulty === 'medium'), medium))
       if (hard > 0) selected.push(...pickRandom(pool.filter((q) => q.difficulty === 'hard'), hard))
     }
-    // Shuffle so subjects are interleaved
     for (let i = selected.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[selected[i], selected[j]] = [selected[j], selected[i]]
     }
     onStart(selected)
   }
+
+  const allDone = mode === 'new' && totalNew === 0
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -124,31 +150,104 @@ export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
       </nav>
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-5 pb-36 space-y-3">
-        {/* Presets */}
-        <div className="flex gap-2 flex-wrap">
-          <span className="text-xs text-gray-400 self-center">Vorlagen:</span>
-          {[
-            { label: 'Klausur (2L·2M·1S)', e: 2, m: 2, h: 1 },
-            { label: 'Nur Leicht (5)', e: 5, m: 0, h: 0 },
-            { label: 'Nur Schwer (5)', e: 0, m: 0, h: 5 },
-            { label: 'Gemischt (2·2·2)', e: 2, m: 2, h: 2 },
-          ].map(({ label, e, m, h }) => (
-            <button
-              key={label}
-              onClick={() => applyPreset(e, m, h)}
-              className="text-xs px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-lmu-blue hover:text-lmu-blue transition"
-            >
-              {label}
-            </button>
-          ))}
+
+        {/* Mode toggle */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-1 flex gap-1">
+          <button
+            onClick={() => switchMode('new')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              mode === 'new'
+                ? 'bg-lmu-blue text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>🆕</span>
+            <span>Neue Fragen</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${
+              mode === 'new' ? 'bg-white bg-opacity-20 text-blue-100' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {totalNew}
+            </span>
+          </button>
+          <button
+            onClick={() => switchMode('review')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              mode === 'review'
+                ? 'bg-lmu-blue text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <span>🔄</span>
+            <span>Wiederholung</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-normal ${
+              mode === 'review' ? 'bg-white bg-opacity-20 text-blue-100' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {totalSeen}
+            </span>
+          </button>
         </div>
 
+        {/* All-done banner */}
+        {allDone && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 text-center">
+            <div className="text-2xl mb-1">🎉</div>
+            <div className="font-semibold text-green-800 text-sm mb-1">Alle Fragen bearbeitet!</div>
+            <p className="text-green-700 text-xs mb-3">
+              Du hast alle {allQuestions.length} Fragen mindestens einmal gesehen. Wechsle zu „Wiederholung" oder setze den Fortschritt zurück.
+            </p>
+            <button
+              onClick={() => { clearSeen(); switchMode('new') }}
+              className="text-xs px-4 py-1.5 rounded-full bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              Fortschritt zurücksetzen
+            </button>
+          </div>
+        )}
+
+        {/* Presets — only when there are questions available */}
+        {!allDone && (
+          <div className="flex gap-2 flex-wrap">
+            <span className="text-xs text-gray-400 self-center">Vorlagen:</span>
+            {[
+              { label: 'Klausur (2L·2M·1S)', e: 2, m: 2, h: 1 },
+              { label: 'Nur Leicht (5)', e: 5, m: 0, h: 0 },
+              { label: 'Nur Schwer (5)', e: 0, m: 0, h: 5 },
+              { label: 'Gemischt (2·2·2)', e: 2, m: 2, h: 2 },
+            ].map(({ label, e, m, h }) => (
+              <button
+                key={label}
+                onClick={() => applyPreset(e, m, h)}
+                className="text-xs px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-lmu-blue hover:text-lmu-blue transition"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Subject cards */}
-        {SUBJECTS.map((meta) => {
+        {!allDone && SUBJECTS.map((meta) => {
           const cfg = configs[meta.id]
           const avail = availability[meta.id]
           const subjectTotal = cfg.easy + cfg.medium + cfg.hard
+          const subjectAvail = avail.easy + avail.medium + avail.hard
           const isActive = subjectTotal > 0
+
+          // Grey out subjects with no available questions in current mode
+          if (subjectAvail === 0) {
+            return (
+              <div
+                key={meta.id}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden opacity-40"
+              >
+                <div className={`px-4 py-3 flex items-center gap-2 ${meta.bgColor}`}>
+                  <span className="text-base">{meta.language === 'en' ? '🇬🇧' : '🇩🇪'}</span>
+                  <span className={`font-bold text-sm flex-1 ${meta.color}`}>{meta.label}</span>
+                  <span className="text-xs text-gray-400">Keine {mode === 'new' ? 'neuen' : 'gesehenen'} Fragen</span>
+                </div>
+              </div>
+            )
+          }
 
           return (
             <div
@@ -173,6 +272,7 @@ export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
                 {(['easy', 'medium', 'hard'] as Diff[]).map((diff) => {
                   const count = cfg[diff]
                   const max = avail[diff]
+                  if (max === 0) return null
                   return (
                     <div key={diff} className="flex items-center gap-3">
                       {/* Label */}

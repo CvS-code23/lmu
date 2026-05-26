@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard'
 import { LernheftPage } from './components/LernheftPage'
 import { type Question, type SessionResult, type Subject } from './types'
 import { saveSession, generateId } from './utils/history'
+import { markSeen } from './utils/seenQuestions'
 
 type View = 'home' | 'practice' | 'test' | 'results' | 'literature' | 'session-creator' | 'custom-session' | 'dashboard' | 'lernheft'
 
@@ -32,6 +33,7 @@ export default function App() {
       timestamp: Date.now(),
     }
     saveSession(fullResult)
+    markSeen(fullResult.results.map((r) => r.question.id))
     setLastResult(fullResult)
     setLastView(returnTo)
     setView('results')
