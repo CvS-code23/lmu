@@ -85,13 +85,6 @@ export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
     })
   }
 
-  function setExact(subject: Subject, diff: Diff, n: number) {
-    setConfigs((prev) => {
-      const max = availability[subject][diff]
-      return { ...prev, [subject]: { ...prev[subject], [diff]: Math.min(n, max) } }
-    })
-  }
-
   function resetAll() {
     setConfigs(defaultConfig())
   }
@@ -304,28 +297,6 @@ export function SessionCreator({ onStart, onBack }: SessionCreatorProps) {
                         +
                       </button>
 
-                      {/* Quick chips */}
-                      <div className="flex gap-1 ml-1">
-                        {[0, 3, 6, 'Max'].map((n) => {
-                          const val = n === 'Max' ? max : (n as number)
-                          const active = count === val && (n !== 0 || count === 0)
-                          return (
-                            <button
-                              key={n}
-                              onClick={() => setExact(meta.id, diff, val)}
-                              className={`px-2 py-0.5 rounded text-xs font-medium transition ${
-                                active
-                                  ? diff === 'easy' ? 'bg-green-500 text-white'
-                                  : diff === 'medium' ? 'bg-yellow-500 text-white'
-                                  : 'bg-red-500 text-white'
-                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          )
-                        })}
-                      </div>
                     </div>
                   )
                 })}
